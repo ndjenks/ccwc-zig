@@ -18,9 +18,11 @@ Just like "wc" it has the following options:
 
 ./zig-out/bin/ccwc-zig filepath                    -- Prints number of lines, words and bytes
 
-cat filepath | ./zig-out/bin/ccwc-zig -lm          -- Reads from stdin and prints number of lines and chars
+cat filepath | ./zig-out/bin/ccwc-zig -lm          -- Reads from stdin and prints number
+                                                      of lines and chars
 
-cat filepath | ./zig-out/bin/ccwc-zig              -- Reads from stdin and prints number of lines, words and bytes
+cat filepath | ./zig-out/bin/ccwc-zig              -- Reads from stdin and prints number
+                                                      of lines, words and bytes
 ```
 
 Feel free to review the code.
