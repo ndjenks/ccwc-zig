@@ -19,15 +19,9 @@ pub fn main() !void {
         try list.append(arg);
     }
 
-    std.debug.print("Arguments: {s}\n", .{list.items});
-    std.debug.print("Argument count: {d}\n", .{list.items.len});
-
-    //const Options = enum { @"-c", @"-l", @"-w", @"-m" };
-    //const argc = list.items.len;
     const argv = list.items;
     var options: []const u8 = "";
     var filepath: []const u8 = "";
-    //const counter: Counter = .{};
 
     for (argv[1..argv.len]) |arg| {
         const slice = arg[0..arg.len];
@@ -41,11 +35,17 @@ pub fn main() !void {
     if (std.mem.eql(u8, filepath, "")) {
         file = std.io.getStdIn();
     } else {
-        std.debug.print("path {s}\n", .{filepath});
-        file = try std.fs.cwd().openFile(filepath, .{});
+        file = std.fs.cwd().openFile(filepath, .{}) catch |err| switch (err) {
+            error.FileNotFound => {
+                std.debug.print("File non-existent or wrong path\n", .{});
+                return err;
+            },
+            else => {
+                return err;
+            },
+        };
     }
-    std.debug.print("options {s}\n", .{options});
-    const result = try updateCounterStruct(file);
+    const result = try fileParser(file);
     if (std.mem.eql(u8, options, "")) {
         std.debug.print("\t{d}\t{d}\t{d}\t{s}\n", .{ result.line, result.word, result.byte, filepath });
     } else {
@@ -70,7 +70,7 @@ pub fn main() !void {
     defer file.close();
 }
 
-fn updateCounterStruct(file: std.fs.File) anyerror!Counter {
+fn fileParser(file: std.fs.File) anyerror!Counter {
     var counter: Counter = .{};
     var buf_reader = std.io.bufferedReader(file.reader());
     var in_stream = buf_reader.reader();
