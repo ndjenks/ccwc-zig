@@ -11,22 +11,22 @@ pub fn main() !void {
     var argIterator = try std.process.argsWithAllocator(allocator);
     defer argIterator.deinit();
 
-    const allocatorArray = gpa.allocator();
-    var list = std.ArrayList([:0]const u8).init(allocatorArray);
+    var list = std.ArrayList([:0]const u8).init(allocator);
     defer list.deinit();
+
+    var options = std.ArrayList([]const u8).init(allocator);
+    defer options.deinit();
 
     while (argIterator.next()) |arg| {
         try list.append(arg);
     }
-
     const argv = list.items;
-    var options: []const u8 = "";
     var filepath: []const u8 = "";
 
     for (argv[1..argv.len]) |arg| {
         const slice = arg[0..arg.len];
         if (slice[0] == '-') {
-            options = slice[1..arg.len];
+            try options.append(slice[1..arg.len]);
         } else {
             filepath = arg;
         }
@@ -46,25 +46,43 @@ pub fn main() !void {
         };
     }
     const result = try fileParser(file);
-    if (std.mem.eql(u8, options, "")) {
+    var printline: bool = false;
+    var printword: bool = false;
+    var printbyte: bool = false;
+    var printchar: bool = false;
+    if (options.items.len == 0) {
         std.debug.print("\t{d}\t{d}\t{d}\t{s}\n", .{ result.line, result.word, result.byte, filepath });
     } else {
-        for (options) |opt| {
-            std.debug.print("opt {c}\n", .{opt});
-            if (opt == 'l') {
-                std.debug.print("\t{d}", .{result.line});
-            } else if (opt == 'w') {
-                std.debug.print("\t{d}", .{result.word});
-            } else if (opt == 'c') {
-                std.debug.print("\t{d}", .{result.byte});
-            } else if (opt == 'm') {
-                std.debug.print("\t{d}", .{result.char});
+        for (options.items) |option| {
+            for (option) |opt| {
+                if (opt == 'l') {
+                    printline = true;
+                } else if (opt == 'w') {
+                    printword = true;
+                } else if (opt == 'c') {
+                    printbyte = true;
+                } else if (opt == 'm') {
+                    printchar = true;
+                }
             }
-            if (!std.mem.eql(u8, filepath, "")) {
-                std.debug.print("\t{s}\n", .{filepath});
-            } else {
-                std.debug.print("\n", .{});
-            }
+        }
+        if (printline) {
+            std.debug.print("\t{d}", .{result.line});
+        }
+        if (printword) {
+            std.debug.print("\t{d}", .{result.word});
+        }
+        if (printbyte) {
+            std.debug.print("\t{d}", .{result.byte});
+        }
+        if (printchar) {
+            std.debug.print("\t{d}", .{result.char});
+        }
+
+        if (!std.mem.eql(u8, filepath, "")) {
+            std.debug.print("\t{s}\n", .{filepath});
+        } else {
+            std.debug.print("\n", .{});
         }
     }
     defer file.close();
